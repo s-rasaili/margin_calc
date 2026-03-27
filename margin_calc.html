@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Marketplace Margin Calculator</title>
+
+  <style>
+    * {
+      box-sizing: border-box; /* ✅ fixes padding issue globally */
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #eef2f7, #e3e9f2);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card {
+      width: 420px;
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 25px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      transition: 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(0,0,0,0.12);
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+    }
+
+    label {
+      font-size: 14px;
+      color: #555;
+      margin-top: 12px;
+      display: block;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 10px;
+      border: 1px solid #dcdfe6;
+      font-size: 15px;
+      transition: 0.2s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #4f8cff;
+      box-shadow: 0 0 0 2px rgba(79,140,255,0.15);
+    }
+
+    .result-box {
+      margin-top: 20px;
+      padding: 16px;
+      background: #f7f9fc;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .result-box div {
+      margin: 6px 0;
+      font-size: 15px;
+      color: #444;
+    }
+
+    .highlight {
+      font-size: 22px;
+      font-weight: bold;
+      color: #4f8cff;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2>Margin Calculator</h2>
+
+  <label>Seller Price</label>
+  <input type="number" id="sellerPrice" placeholder="Enter Seller Price">
+
+  <label>NRV</label>
+  <input type="number" id="nrv" placeholder="Enter NRV">
+
+  <label>Margin %</label>
+  <input type="number" id="margin" placeholder="Enter Margin %">
+
+  <div class="result-box">
+    <div>BSA</div>
+    <div class="highlight" id="bsa">0.00</div>
+  </div>
+</div>
+
+<script>
+  const seller = document.getElementById("sellerPrice");
+  const nrv = document.getElementById("nrv");
+  const margin = document.getElementById("margin");
+  const bsaText = document.getElementById("bsa");
+
+  let active = null;
+
+  seller.addEventListener("input", () => active = "seller");
+  nrv.addEventListener("input", () => active = "nrv");
+  margin.addEventListener("input", () => active = "margin");
+
+  function calculate() {
+    const sellerPrice = parseFloat(seller.value) || 0;
+    let nrvVal = parseFloat(nrv.value) || 0;
+    let marginVal = parseFloat(margin.value) || 0;
+
+    const onePercent = sellerPrice * 0.01;
+
+    if (active === "nrv") {
+      const bsa = nrvVal - onePercent;
+
+      if (sellerPrice > 0) {
+        marginVal = ((sellerPrice - bsa) / sellerPrice) * 100;
+        margin.value = marginVal.toFixed(2);
+      }
+
+      bsaText.innerText = bsa.toFixed(2);
+    }
+
+    else if (active === "margin") {
+      const bsa = sellerPrice * (1 - marginVal / 100);
+      nrvVal = bsa + onePercent;
+
+      nrv.value = nrvVal.toFixed(2);
+      bsaText.innerText = bsa.toFixed(2);
+    }
+
+    else {
+      const bsa = nrvVal - onePercent;
+
+      if (sellerPrice > 0) {
+        marginVal = ((sellerPrice - bsa) / sellerPrice) * 100;
+        margin.value = marginVal.toFixed(2);
+      }
+
+      bsaText.innerText = bsa.toFixed(2);
+    }
+  }
+
+  seller.addEventListener("input", calculate);
+  nrv.addEventListener("input", calculate);
+  margin.addEventListener("input", calculate);
+</script>
+
+</body>
+</html>
