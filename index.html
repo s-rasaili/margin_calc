@@ -14,7 +14,7 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 40px auto;
   background: #fff;
   border-radius: 16px;
@@ -25,9 +25,9 @@ body {
 .header {
   background: linear-gradient(90deg, #5b4dff, #7a6bff);
   color: #fff;
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
+  padding: 18px 20px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .body {
@@ -36,13 +36,21 @@ body {
   padding: 20px;
 }
 
-.left { flex: 1; }
-
-.right {
+.left, .right {
   flex: 1;
+}
+
+.section {
   background: #f9fafc;
-  border-radius: 12px;
-  padding: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+}
+
+.small {
+  font-size: 12px;
+  color: #777;
+  margin-bottom: 8px;
 }
 
 .row {
@@ -64,9 +72,8 @@ input.invalid {
 }
 
 .result-box {
-  margin-top: 10px;
-  padding: 15px;
   background: #eef1ff;
+  padding: 15px;
   border-radius: 10px;
   text-align: center;
 }
@@ -77,27 +84,18 @@ input.invalid {
   color: #5b4dff;
 }
 
-.reset-btn {
-  width: 100%;
-  margin-top: 12px;
-  padding: 10px;
-  border: none;
-  border-radius: 8px;
-  background: #ef4444;
-  color: #fff;
-  cursor: pointer;
-}
-
-.formula-line {
+.formula {
   background: #fff;
-  padding: 10px;
-  margin-bottom: 10px;
+  padding: 12px;
   border-radius: 8px;
+  margin-bottom: 10px;
   font-size: 13px;
+  border-left: 4px solid #5b4dff;
 }
 
-.formula-line b {
+.value {
   color: #5b4dff;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -107,8 +105,7 @@ input.invalid {
 <div class="container">
 
 <div class="header">
-  <div>📊 Margin Calculator</div>
-  <div>Marketplace Tool</div>
+📊 Smart Margin Calculator
 </div>
 
 <div class="body">
@@ -116,14 +113,19 @@ input.invalid {
 <!-- LEFT -->
 <div class="left">
 
+<div class="section">
+<div class="small">Enter Display OR Seller + GST</div>
+
 <div class="row">
 <input type="number" id="displayPrice" placeholder="Display Price">
 <input type="number" id="gst" placeholder="GST %">
 </div>
 
-<div class="row">
 <input type="number" id="sellerPrice" placeholder="Seller Price">
 </div>
+
+<div class="section">
+<div class="small">Enter Margin OR NRV</div>
 
 <div class="row">
 <input type="number" id="margin" placeholder="Margin %">
@@ -135,39 +137,48 @@ BSA<br>
 <span id="bsa">0.00</span>
 </div>
 
-<button class="reset-btn" onclick="resetCalc()">Reset</button>
+</div>
 
 </div>
 
 <!-- RIGHT -->
 <div class="right">
 
-<h3>Live Results</h3>
+<h4>Live Calculation</h4>
 
-<div class="formula-line">
+<div class="formula">
 Display = Seller × (1 + GST)<br>
-<b id="resDisplay">-</b>
+<span class="value" id="resDisplay">-</span>
 </div>
 
-<div class="formula-line">
+<div class="formula">
 Seller = Display ÷ (1 + GST)<br>
-<b id="resSeller">-</b>
+<span class="value" id="resSeller">-</span>
 </div>
 
-<div class="formula-line">
-NRV<br>
-<b id="resNRV">-</b>
+<div class="formula">
+NRV (Given / Calculated)<br>
+<span class="value" id="resNRV">-</span>
 </div>
 
-<div class="formula-line">
-BSA = NRV − 1% of Seller<br>
-<b id="resBSA">-</b>
+<div class="formula">
+BSA = NRV − (1% of Seller)<br>
+<span class="value" id="resBSA">-</span>
 </div>
 
-<div class="formula-line">
-Margin % = (Seller − BSA) / Seller × 100<br>
-<b id="resMargin">-</b>
+<div class="formula">
+NRV Margin = (Seller − NRV) / Seller × 100<br>
+<span class="value" id="resMarginNRV">-</span>
 </div>
+
+<div class="formula">
+BSA Margin = (Seller − BSA) / Seller × 100<br>
+<span class="value" id="resMarginBSA">-</span>
+</div>
+
+</div>
+
+
 
 </div>
 
@@ -186,7 +197,8 @@ const resDisplay = document.getElementById("resDisplay");
 const resSeller = document.getElementById("resSeller");
 const resNRV = document.getElementById("resNRV");
 const resBSA = document.getElementById("resBSA");
-const resMargin = document.getElementById("resMargin");
+const resMarginNRV = document.getElementById("resMarginNRV");
+const resMarginBSA = document.getElementById("resMarginBSA");
 
 let active = null;
 
@@ -200,28 +212,28 @@ inputs.forEach(el => {
   });
 });
 
-function validate(el) {
-  if (el.value === "") return el.classList.remove("invalid");
-
-  if (parseFloat(el.value) < 0) {
-    el.value = "";
+function validate(el){
+  if(el.value==="" ) return;
+  if(parseFloat(el.value)<0){
+    el.value="";
     el.classList.add("invalid");
   } else {
     el.classList.remove("invalid");
   }
 }
 
-function val(el) {
-  return el.value === "" ? null : parseFloat(el.value);
+function val(el){
+  return el.value===""?null:parseFloat(el.value);
 }
 
-function set(el, value) {
-  if (active !== el.id && value !== null && !isNaN(value)) {
-    el.value = value.toFixed(2);
+function set(el,value){
+  if(active!==el.id && value!==null){
+    el.value=value.toFixed(2);
   }
 }
 
 function calculate() {
+
   let dp = val(displayPrice);
   let gstVal = val(gst);
   let sp = val(seller);
@@ -232,66 +244,82 @@ function calculate() {
   const gstFactor = 1 + gstVal / 100;
 
   // Display → Seller
-  if (dp !== null && active !== "sellerPrice") {
+  if (active === "displayPrice" && dp !== null) {
     sp = dp / gstFactor;
     set(seller, sp);
   }
 
   // Seller → Display
-  if (sp !== null && active !== "displayPrice") {
+  if (active === "sellerPrice" && sp !== null) {
     dp = sp * gstFactor;
     set(displayPrice, dp);
   }
 
-  // NRV + Margin → Seller
-  if (nrvVal !== null && marginVal !== null && active !== "sellerPrice") {
-    sp = nrvVal / (1 - marginVal / 100 + 0.01);
-    set(seller, sp);
+  // GST change
+  if (active === "gst") {
+    if (sp !== null) {
+      dp = sp * gstFactor;
+      set(displayPrice, dp);
+    } else if (dp !== null) {
+      sp = dp / gstFactor;
+      set(seller, sp);
+    }
   }
 
-  if (sp === null) return;
-
-  const onePercent = sp * 0.01;
+  const onePercent = sp ? sp * 0.01 : 0;
   let bsa = null;
 
+  // Margin → NRV
+  if (active === "margin" && sp !== null && marginVal !== null) {
+    bsa = sp * (1 - marginVal / 100);
+    nrvVal = bsa + onePercent;
+    set(nrv, nrvVal);
+  }
+
   // NRV → Margin
-  if (nrvVal !== null) {
+  if (active === "nrv" && sp !== null && nrvVal !== null) {
     bsa = nrvVal - onePercent;
     marginVal = ((sp - bsa) / sp) * 100;
     set(margin, marginVal);
   }
 
-  // Margin → NRV
-  if (marginVal !== null && nrvVal === null) {
-    bsa = sp * (1 - marginVal / 100);
-    nrvVal = bsa + onePercent;
-    set(nrv, nrvVal);
+  // NRV + Margin → Seller
+  if (nrvVal !== null && marginVal !== null &&
+      active !== "sellerPrice" && active !== "displayPrice") {
+
+    sp = nrvVal / (1 - marginVal / 100 + 0.01);
+    set(seller, sp);
+
+    if (gstVal !== null) {
+      dp = sp * gstFactor;
+      set(displayPrice, dp);
+    }
+  }
+
+  // BSA
+  if (sp !== null) {
+    if (nrvVal !== null) {
+      bsa = nrvVal - sp * 0.01;
+    } else if (marginVal !== null) {
+      bsa = sp * (1 - marginVal / 100);
+    }
   }
 
   if (bsa !== null) {
     bsaText.innerText = bsa.toFixed(2);
   }
 
-  // LIVE PANEL
+  // Margins
+  let marginNRV = (sp && nrvVal) ? ((sp - nrvVal) / sp) * 100 : null;
+  let marginBSA = (sp && bsa) ? ((sp - bsa) / sp) * 100 : null;
+
+  // Right panel
   resDisplay.innerText = dp ? dp.toFixed(2) : "-";
   resSeller.innerText = sp ? sp.toFixed(2) : "-";
   resNRV.innerText = nrvVal ? nrvVal.toFixed(2) : "-";
   resBSA.innerText = bsa ? bsa.toFixed(2) : "-";
-  resMargin.innerText = marginVal ? marginVal.toFixed(2) + "%" : "-";
-}
-
-function resetCalc() {
-  inputs.forEach(el => {
-    el.value = "";
-    el.classList.remove("invalid");
-  });
-
-  bsaText.innerText = "0.00";
-  resDisplay.innerText = "-";
-  resSeller.innerText = "-";
-  resNRV.innerText = "-";
-  resBSA.innerText = "-";
-  resMargin.innerText = "-";
+  resMarginNRV.innerText = marginNRV ? marginNRV.toFixed(2) + "%" : "-";
+  resMarginBSA.innerText = marginBSA ? marginBSA.toFixed(2) + "%" : "-";
 }
 </script>
 
