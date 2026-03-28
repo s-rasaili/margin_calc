@@ -155,6 +155,11 @@ Seller = Display ÷ (1 + GST)<br>
 </div>
 
 <div class="formula-line">
+NRV<br>
+<b id="resNRV">-</b>
+</div>
+
+<div class="formula-line">
 BSA = NRV − 1% of Seller<br>
 <b id="resBSA">-</b>
 </div>
@@ -179,6 +184,7 @@ const bsaText = document.getElementById("bsa");
 
 const resDisplay = document.getElementById("resDisplay");
 const resSeller = document.getElementById("resSeller");
+const resNRV = document.getElementById("resNRV");
 const resBSA = document.getElementById("resBSA");
 const resMargin = document.getElementById("resMargin");
 
@@ -223,19 +229,21 @@ function calculate() {
   let marginVal = val(margin);
 
   if (gstVal === null) gstVal = 0;
-
   const gstFactor = 1 + gstVal / 100;
 
+  // Display → Seller
   if (dp !== null && active !== "sellerPrice") {
     sp = dp / gstFactor;
     set(seller, sp);
   }
 
+  // Seller → Display
   if (sp !== null && active !== "displayPrice") {
     dp = sp * gstFactor;
     set(displayPrice, dp);
   }
 
+  // NRV + Margin → Seller
   if (nrvVal !== null && marginVal !== null && active !== "sellerPrice") {
     sp = nrvVal / (1 - marginVal / 100 + 0.01);
     set(seller, sp);
@@ -246,12 +254,14 @@ function calculate() {
   const onePercent = sp * 0.01;
   let bsa = null;
 
+  // NRV → Margin
   if (nrvVal !== null) {
     bsa = nrvVal - onePercent;
     marginVal = ((sp - bsa) / sp) * 100;
     set(margin, marginVal);
   }
 
+  // Margin → NRV
   if (marginVal !== null && nrvVal === null) {
     bsa = sp * (1 - marginVal / 100);
     nrvVal = bsa + onePercent;
@@ -265,6 +275,7 @@ function calculate() {
   // LIVE PANEL
   resDisplay.innerText = dp ? dp.toFixed(2) : "-";
   resSeller.innerText = sp ? sp.toFixed(2) : "-";
+  resNRV.innerText = nrvVal ? nrvVal.toFixed(2) : "-";
   resBSA.innerText = bsa ? bsa.toFixed(2) : "-";
   resMargin.innerText = marginVal ? marginVal.toFixed(2) + "%" : "-";
 }
@@ -278,6 +289,7 @@ function resetCalc() {
   bsaText.innerText = "0.00";
   resDisplay.innerText = "-";
   resSeller.innerText = "-";
+  resNRV.innerText = "-";
   resBSA.innerText = "-";
   resMargin.innerText = "-";
 }
