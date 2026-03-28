@@ -44,6 +44,11 @@ input {
   border: 1px solid #ddd;
 }
 
+input:focus {
+  border-color: #4f8cff;
+  box-shadow: 0 0 0 2px rgba(79,140,255,0.15);
+}
+
 .result-box {
   margin-top: 15px;
   padding: 12px;
@@ -58,6 +63,13 @@ input {
   color: #4f8cff;
 }
 
+.mode-indicator {
+  text-align: center;
+  font-size: 12px;
+  margin-bottom: 10px;
+  color: #888;
+}
+
 .reset-btn {
   width: 100%;
   margin-top: 12px;
@@ -68,6 +80,10 @@ input {
   color: #fff;
   cursor: pointer;
 }
+
+.reset-btn:hover {
+  background: #e04848;
+}
 </style>
 </head>
 
@@ -75,6 +91,8 @@ input {
 
 <div class="card">
 <h2>Smart Margin Calculator</h2>
+
+<div class="mode-indicator" id="modeText">Mode: Auto</div>
 
 <label>Display Price (with GST)</label>
 <input type="number" id="displayPrice">
@@ -107,14 +125,17 @@ const seller = document.getElementById("sellerPrice");
 const nrv = document.getElementById("nrv");
 const margin = document.getElementById("margin");
 const bsaText = document.getElementById("bsa");
+const modeText = document.getElementById("modeText");
 
 let active = null;
+let mode = null;
 
 const inputs = [displayPrice, gst, seller, nrv, margin];
 
 inputs.forEach(el => {
   el.addEventListener("input", () => {
     active = el.id;
+    detectMode();
     calculate();
   });
 });
@@ -129,6 +150,23 @@ function setVal(el, val) {
   }
 }
 
+// Detect mode
+function detectMode() {
+  let dp = getVal(displayPrice);
+  let sp = getVal(seller);
+  let gstVal = getVal(gst);
+
+  if (!mode) {
+    if (dp && gstVal) {
+      mode = "display";
+      modeText.innerText = "Mode: Display Driven";
+    } else if (sp && gstVal) {
+      mode = "seller";
+      modeText.innerText = "Mode: Seller Driven";
+    }
+  }
+}
+
 function calculate() {
   let dp = getVal(displayPrice);
   let gstVal = getVal(gst);
@@ -139,16 +177,19 @@ function calculate() {
   if (!gstVal) gstVal = 0;
   const gstFactor = 1 + gstVal / 100;
 
-  // Display → Seller
-  if (active === "displayPrice" && dp && gstVal) {
-    sp = dp / gstFactor;
-    setVal(seller, sp);
+  // MODE LOGIC
+  if (mode === "display") {
+    if (dp && gstVal) {
+      sp = dp / gstFactor;
+      setVal(seller, sp);
+    }
   }
 
-  // Seller → Display
-  if (active === "sellerPrice" && sp && gstVal) {
-    dp = sp * gstFactor;
-    setVal(displayPrice, dp);
+  if (mode === "seller") {
+    if (sp && gstVal) {
+      dp = sp * gstFactor;
+      setVal(displayPrice, dp);
+    }
   }
 
   if (!sp) {
@@ -173,14 +214,13 @@ function calculate() {
     setVal(nrv, nrvVal);
   }
 
-  // Seller + NRV
+  // Auto sync
   else if (sp && nrvVal !== null) {
     bsa = nrvVal - onePercent;
     marginVal = ((sp - bsa) / sp) * 100;
     setVal(margin, marginVal);
   }
 
-  // Seller + Margin
   else if (sp && marginVal !== null) {
     bsa = sp * (1 - marginVal / 100);
     nrvVal = bsa + onePercent;
@@ -190,19 +230,14 @@ function calculate() {
   if (bsa !== null) {
     bsaText.innerText = bsa.toFixed(2);
   }
-
-  // Final sync Display Price
-  if (sp && gstVal) {
-    dp = sp * gstFactor;
-    setVal(displayPrice, dp);
-  }
 }
 
 // RESET
 function resetCalc() {
   inputs.forEach(el => el.value = "");
   bsaText.innerText = "0.00";
-  active = null;
+  mode = null;
+  modeText.innerText = "Mode: Auto";
 }
 </script>
 
