@@ -1,162 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Marketplace Margin Calculator</title>
+<meta charset="UTF-8">
+<title>Smart Margin Calculator</title>
 
-  <style>
-    * {
-      box-sizing: border-box; /* ✅ fixes padding issue globally */
-    }
+<style>
+* { box-sizing: border-box; }
 
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #eef2f7, #e3e9f2);
-      height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #eef2f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
 
-    .card {
-      width: 420px;
-      background: #ffffff;
-      border-radius: 16px;
-      padding: 25px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      transition: 0.3s;
-    }
+.card {
+  width: 420px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
 
-    .card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 15px 40px rgba(0,0,0,0.12);
-    }
+h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
 
-    h2 {
-      margin-bottom: 20px;
-      color: #2c3e50;
-      text-align: center;
-    }
+label {
+  font-size: 13px;
+  margin-top: 10px;
+  display: block;
+}
 
-    label {
-      font-size: 14px;
-      color: #555;
-      margin-top: 12px;
-      display: block;
-    }
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
 
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      border-radius: 10px;
-      border: 1px solid #dcdfe6;
-      font-size: 15px;
-      transition: 0.2s;
-      outline: none;
-    }
+.result-box {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f5f7fb;
+  border-radius: 10px;
+  text-align: center;
+}
 
-    input:focus {
-      border-color: #4f8cff;
-      box-shadow: 0 0 0 2px rgba(79,140,255,0.15);
-    }
+.highlight {
+  font-size: 20px;
+  font-weight: bold;
+  color: #4f8cff;
+}
 
-    .result-box {
-      margin-top: 20px;
-      padding: 16px;
-      background: #f7f9fc;
-      border-radius: 12px;
-      text-align: center;
-    }
-
-    .result-box div {
-      margin: 6px 0;
-      font-size: 15px;
-      color: #444;
-    }
-
-    .highlight {
-      font-size: 22px;
-      font-weight: bold;
-      color: #4f8cff;
-    }
-  </style>
+.reset-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background: #ff5c5c;
+  color: #fff;
+  cursor: pointer;
+}
+</style>
 </head>
 
 <body>
 
 <div class="card">
-  <h2>Margin Calculator</h2>
+<h2>Smart Margin Calculator</h2>
 
-  <label>Seller Price</label>
-  <input type="number" id="sellerPrice" placeholder="Enter Seller Price">
+<label>Display Price (with GST)</label>
+<input type="number" id="displayPrice">
 
-  <label>NRV</label>
-  <input type="number" id="nrv" placeholder="Enter NRV">
+<label>GST %</label>
+<input type="number" id="gst">
 
-  <label>Margin %</label>
-  <input type="number" id="margin" placeholder="Enter Margin %">
+<label>Seller Price</label>
+<input type="number" id="sellerPrice">
 
-  <div class="result-box">
-    <div>BSA</div>
-    <div class="highlight" id="bsa">0.00</div>
-  </div>
+<label>NRV</label>
+<input type="number" id="nrv">
+
+<label>Margin %</label>
+<input type="number" id="margin">
+
+<div class="result-box">
+  <div>BSA</div>
+  <div class="highlight" id="bsa">0.00</div>
+</div>
+
+<button class="reset-btn" onclick="resetCalc()">Reset</button>
+
 </div>
 
 <script>
-  const seller = document.getElementById("sellerPrice");
-  const nrv = document.getElementById("nrv");
-  const margin = document.getElementById("margin");
-  const bsaText = document.getElementById("bsa");
+const displayPrice = document.getElementById("displayPrice");
+const gst = document.getElementById("gst");
+const seller = document.getElementById("sellerPrice");
+const nrv = document.getElementById("nrv");
+const margin = document.getElementById("margin");
+const bsaText = document.getElementById("bsa");
 
-  let active = null;
+let active = null;
 
-  seller.addEventListener("input", () => active = "seller");
-  nrv.addEventListener("input", () => active = "nrv");
-  margin.addEventListener("input", () => active = "margin");
+const inputs = [displayPrice, gst, seller, nrv, margin];
 
-  function calculate() {
-    const sellerPrice = parseFloat(seller.value) || 0;
-    let nrvVal = parseFloat(nrv.value) || 0;
-    let marginVal = parseFloat(margin.value) || 0;
+inputs.forEach(el => {
+  el.addEventListener("input", () => {
+    active = el.id;
+    calculate();
+  });
+});
 
-    const onePercent = sellerPrice * 0.01;
+function getVal(el) {
+  return el.value === "" ? null : parseFloat(el.value);
+}
 
-    if (active === "nrv") {
-      const bsa = nrvVal - onePercent;
+function setVal(el, val) {
+  if (active !== el.id && val !== null && !isNaN(val)) {
+    el.value = val.toFixed(2);
+  }
+}
 
-      if (sellerPrice > 0) {
-        marginVal = ((sellerPrice - bsa) / sellerPrice) * 100;
-        margin.value = marginVal.toFixed(2);
-      }
+function calculate() {
+  let dp = getVal(displayPrice);
+  let gstVal = getVal(gst);
+  let sp = getVal(seller);
+  let nrvVal = getVal(nrv);
+  let marginVal = getVal(margin);
 
-      bsaText.innerText = bsa.toFixed(2);
-    }
+  if (!gstVal) gstVal = 0;
+  const gstFactor = 1 + gstVal / 100;
 
-    else if (active === "margin") {
-      const bsa = sellerPrice * (1 - marginVal / 100);
-      nrvVal = bsa + onePercent;
-
-      nrv.value = nrvVal.toFixed(2);
-      bsaText.innerText = bsa.toFixed(2);
-    }
-
-    else {
-      const bsa = nrvVal - onePercent;
-
-      if (sellerPrice > 0) {
-        marginVal = ((sellerPrice - bsa) / sellerPrice) * 100;
-        margin.value = marginVal.toFixed(2);
-      }
-
-      bsaText.innerText = bsa.toFixed(2);
-    }
+  // Display → Seller
+  if (active === "displayPrice" && dp && gstVal) {
+    sp = dp / gstFactor;
+    setVal(seller, sp);
   }
 
-  seller.addEventListener("input", calculate);
-  nrv.addEventListener("input", calculate);
-  margin.addEventListener("input", calculate);
+  // Seller → Display
+  if (active === "sellerPrice" && sp && gstVal) {
+    dp = sp * gstFactor;
+    setVal(displayPrice, dp);
+  }
+
+  if (!sp) {
+    bsaText.innerText = "0.00";
+    return;
+  }
+
+  const onePercent = sp * 0.01;
+  let bsa = null;
+
+  // NRV → Margin
+  if (active === "nrv" && nrvVal !== null) {
+    bsa = nrvVal - onePercent;
+    marginVal = ((sp - bsa) / sp) * 100;
+    setVal(margin, marginVal);
+  }
+
+  // Margin → NRV
+  else if (active === "margin" && marginVal !== null) {
+    bsa = sp * (1 - marginVal / 100);
+    nrvVal = bsa + onePercent;
+    setVal(nrv, nrvVal);
+  }
+
+  // Seller + NRV
+  else if (sp && nrvVal !== null) {
+    bsa = nrvVal - onePercent;
+    marginVal = ((sp - bsa) / sp) * 100;
+    setVal(margin, marginVal);
+  }
+
+  // Seller + Margin
+  else if (sp && marginVal !== null) {
+    bsa = sp * (1 - marginVal / 100);
+    nrvVal = bsa + onePercent;
+    setVal(nrv, nrvVal);
+  }
+
+  if (bsa !== null) {
+    bsaText.innerText = bsa.toFixed(2);
+  }
+
+  // Final sync Display Price
+  if (sp && gstVal) {
+    dp = sp * gstFactor;
+    setVal(displayPrice, dp);
+  }
+}
+
+// RESET
+function resetCalc() {
+  inputs.forEach(el => el.value = "");
+  bsaText.innerText = "0.00";
+  active = null;
+}
 </script>
 
 </body>
